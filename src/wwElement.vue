@@ -1,19 +1,31 @@
 <template>
   <div class="qr-barcode-renderer" :style="containerStyle">
     <div class="code-wrapper" :style="alignmentStyle">
-      <!-- QR Code Canvas -->
-      <canvas 
-        v-if="codeType === 'qrcode'" 
-        ref="qrCanvas"
-        class="code-canvas"
-      ></canvas>
+      <!-- QR Code Component -->
+      <qrcode-vue
+        v-if="codeType === 'qrcode'"
+        :value="data"
+        :size="200"
+        :level="'M'"
+        :render-as="'canvas'"
+        :background="backgroundColor"
+        :foreground="foregroundColor"
+        class="code-element"
+      />
       
-      <!-- Barcode SVG -->
-      <svg 
-        v-else 
-        ref="barcodeSvg"
-        class="code-svg"
-      ></svg>
+      <!-- Barcode Component -->
+      <barcode
+        v-else
+        :value="data"
+        :format="'CODE128'"
+        :width="2"
+        :height="80"
+        :display-value="false"
+        :background="backgroundColor"
+        :line-color="foregroundColor"
+        :margin="10"
+        class="code-element"
+      />
       
       <!-- Display code text underneath -->
       <p 
@@ -28,11 +40,15 @@
 </template>
 
 <script>
-import { ref, computed, watch, onMounted, nextTick } from 'vue';
-import QRCode from 'qrcode';
-import JsBarcode from 'jsbarcode';
+import { computed } from 'vue';
+import QrcodeVue from 'qrcode.vue';
+import Barcode from '@chenfengyuan/vue-barcode';
 
 export default {
+  components: {
+    QrcodeVue,
+    Barcode,
+  },
   props: {
     uid: { type: String, required: true },
     content: { type: Object, required: true },
@@ -41,9 +57,6 @@ export default {
     /* wwEditor:end */
   },
   setup(props, { emit }) {
-    const qrCanvas = ref(null);
-    const barcodeSvg = ref(null);
-
     /* wwEditor:start */
     const isEditing = computed(() => props.wwEditorState?.isEditing ?? false);
     /* wwEditor:end */
@@ -72,92 +85,13 @@ export default {
       color: foregroundColor.value,
     }));
 
-    // Render QR Code
-    const renderQRCode = async () => {
-      if (!qrCanvas.value || !data.value) return;
-
-      try {
-        await QRCode.toCanvas(qrCanvas.value, data.value, {
-          width: 200,
-          margin: 1,
-          color: {
-            dark: foregroundColor.value,
-            light: backgroundColor.value,
-          },
-          errorCorrectionLevel: 'M',
-        });
-      } catch (error) {
-        console.error('QR Code render error:', error);
-        emit('trigger-event', {
-          name: 'render-error',
-          event: { error: error.message },
-        });
-      }
-    };
-
-    // Render Barcode
-    const renderBarcode = async () => {
-      if (!barcodeSvg.value || !data.value) return;
-
-      try {
-        JsBarcode(barcodeSvg.value, data.value, {
-          format: 'CODE128',
-          width: 2,
-          height: 80,
-          displayValue: false,
-          background: backgroundColor.value,
-          lineColor: foregroundColor.value,
-          margin: 10,
-        });
-      } catch (error) {
-        console.error('Barcode render error:', error);
-        emit('trigger-event', {
-          name: 'render-error',
-          event: { error: error.message },
-        });
-      }
-    };
-
-    // Main render function
-    const renderCode = async () => {
-      await nextTick();
-      if (codeType.value === 'qrcode') {
-        await renderQRCode();
-      } else {
-        await renderBarcode();
-      }
-    };
-
-    // Watch for all property changes and re-render
-    watch(
-      () => [
-        props.content?.codeType,
-        props.content?.data,
-        props.content?.backgroundColor,
-        props.content?.foregroundColor,
-        props.content?.padding,
-        props.content?.alignment,
-        props.content?.displayCode,
-      ],
-      () => {
-        setTimeout(() => {
-          renderCode();
-        }, 50);
-      },
-      { deep: true }
-    );
-
-    // Initial render
-    onMounted(() => {
-      renderCode();
-    });
-
     return {
       props,
-      qrCanvas,
-      barcodeSvg,
       codeType,
+      data,
       displayText,
+      backgroundColor,
+      foregroundColor,
       containerStyle,
       alignmentStyle,
       textStyle,
@@ -188,8 +122,7 @@ export default {
   min-height: inherit;
 }
 
-.code-canvas,
-.code-svg {
+.code-element {
   max-width: 100%;
   height: auto;
 }

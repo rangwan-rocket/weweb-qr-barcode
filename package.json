@@ -9,7 +9,7 @@
     "@weweb/cli": "latest"
   },
   "dependencies": {
-    "jsbarcode": "^3.12.1",
-    "qrcode": "^1.5.4"
+    "@chenfengyuan/vue-barcode": "^2.0.2",
+    "qrcode.vue": "^3.6.0"
   }
 }
