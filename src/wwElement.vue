@@ -172,7 +172,7 @@ export default {
 <style lang="scss" scoped>
 .qr-barcode-renderer {
   width: 100%;
-  height: 100%;
+  min-height: 250px;
   display: flex;
   flex-direction: column;
 }
@@ -185,6 +185,7 @@ export default {
   width: 100%;
   padding: var(--padding);
   background-color: var(--bg-color);
+  min-height: inherit;
 }
 
 .code-canvas,
